@@ -1,0 +1,10 @@
+.dygraph-legend {
+  left: 60px !important;
+  top: 0px !important;  /* Adjust this value to move the legend higher */
+  background-color: transparent !important;
+}
+
+.dygraph-title {
+  text-align: right !important;  /* Move title to the left */
+  margin-right: 10px; /* Adjust this value as needed to move the title */
+}
