@@ -1,11 +1,11 @@
-library(dplyr)
-library(lubridate)
+years <- seq(1891,2015)
 
 #created a function to process all data 
 #RAVEN, PRMS, and HYPE data is stored as a .csv file in the folder "raw data". Whenever an update to the 
 # model results, these csv files need to be updated
 process_time_series <- function(gauge_names, RAVEN_Data_All, HYPE_Data_All, PRMS_Data_All, Obs_flow) {
   
+  #testing 
   # Initialize lists to store results for each timestep. 
   timeseries_daily_list <- list()
   timeseries_weekly_list <- list()
@@ -145,6 +145,7 @@ results <- process_time_series(
   Obs_flow = Obs_flow
 )
 
+
 # Extract the list of daily data frames
 daily_data_list <- results$daily
 # Initialize a list to store mean calculations for each gauge
@@ -281,11 +282,9 @@ calculate_log_nse <- function(sim, obs) {
   }
 }
 
-test <- NSE(log(HYPE_Data_All$PPCMO), log(PRMS_Data_All$PPCMO))
-
 kge_nse_weekly <- list()
 kge_nse_irr <- list()
-kge_nse_irr <- list()
+kge_nse_monthly <- list()
 kge_nse_seasonal <- list()
 kge_nse_daily <- list()
 
@@ -389,10 +388,10 @@ for (gauge_name in name_all) {
 }
 
 
-# calculate for MONTLY timestep. Loop through each gauge name
+# calculate for MONTHLY timestep. Loop through each gauge name
 for (gauge_name in name_all) {
   # Extract the data frame for the current gauge
-  df <- irr_data_list[[gauge_name]]
+  df <- monthly_data_list[[gauge_name]]
   kge_HYPE_Obs <- KGE(df$HYPE_mean, df$Obs_mean, s = c(1, 1, 1), na.rm = TRUE)
   kge_PRMS_Obs <- KGE(df$PRMS_mean, df$Obs_mean, s = c(1, 1, 1), na.rm = TRUE)
   kge_RAVEN_Obs <- KGE(df$RAVEN_mean,df$Obs_mean, s = c(1, 1, 1), na.rm = TRUE)
@@ -415,7 +414,7 @@ for (gauge_name in name_all) {
   lnse_PRMS_RAVEN <- calculate_log_nse(df$PRMS_mean, df$RAVEN_mean)
   
   # Store the results in a named list
-  kge_nse_irr[[gauge_name]] <- list(
+  kge_nse_monthly[[gauge_name]] <- list(
     kge_HYPE_Obs = kge_HYPE_Obs,
     kge_PRMS_Obs = kge_PRMS_Obs,
     kgeRAVEN_Obs = kge_RAVEN_Obs, 

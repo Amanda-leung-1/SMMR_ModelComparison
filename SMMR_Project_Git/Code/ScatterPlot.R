@@ -1,41 +1,61 @@
+# Define start and end dates
+start_date <- as.POSIXct("1981-10-01")
+end_date <- as.POSIXct("2015-09-30")
 
+# Function to subset data based on date range
+subset_data <- function(data, name) {
+  subset(data[data$Date >= start_date & data$Date <= end_date, c("Date", name)])
+}
 
-############ Scatterplot
+# Function to create scatter plots
+create_scatter_plot <- function(observed, model_data, model_name, name) {
+  plot(observed, model_data, 
+       main = paste("Scatterplot for", model_name),  
+       xlab = "Observed", 
+       ylab = model_name, 
+       pch = 19,
+       xlim = range_values, 
+       ylim = range_values,
+       las = 2)  
+  abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2)
+  grid()
+}
 
-# Subset the data within the given time frame
-subset_Obs_flow <- Obs_flow[Obs_flow$Date >= start_date & Obs_flow$Date <= end_date, c("Date", name)]
-subset_PRMS_Data <- PRMS_Data_All[PRMS_Data_All$Date >= start_date & PRMS_Data_All$Date <= end_date, c("Date", name)]
-subset_HYPE_Data <- HYPE_Data_All[HYPE_Data_All$Date >= start_date & HYPE_Data_All$Date <= end_date, c("Date", name)]
+# File path to save the plots
+file_path <- "Results/scatterplots"
 
-# Plot the subset data
-# Calculate the range for the axes
-min_value <- min(c(subset_Obs_flow[[name]], subset_PRMS_Data[[name]], subset_HYPE_Data[[name]]), na.rm = TRUE)
-max_value <- max(c(subset_Obs_flow[[name]], subset_PRMS_Data[[name]], subset_HYPE_Data[[name]]), na.rm = TRUE)
-range_values <- c(min_value, max_value)
+# Loop through each name in name_all
+for (name in name_all) {
+  
+  # Subset the data for each model
+  subset_Obs_flow <- subset_data(Obs_flow, name)
+  subset_PRMS_Data <- subset_data(PRMS_Data_All, name)
+  subset_HYPE_Data <- subset_data(HYPE_Data_All, name)
+  subset_RAVEN_Data <- subset_data(RAVEN_Data_All, name)
+  
+  # Calculate the range for the axes
+  range_values <- range(c(subset_Obs_flow[[name]], 
+                          subset_PRMS_Data[[name]], 
+                          subset_HYPE_Data[[name]], 
+                          subset_RAVEN_Data[[name]]), na.rm = TRUE)
+  
+  # Set up a PNG device
+  png_filename <- paste0(file_path, "Scatterplot_", name, ".png")
+  png(filename = png_filename, width = 1200, height = 600)
+  
+  # Set up a 1x3 grid for plots
+  par(mfrow = c(1, 3))
+  
+  # Create scatter plots for each model
+  create_scatter_plot(subset_Obs_flow[[name]], subset_PRMS_Data[[name]], "PRMS", name)
+  create_scatter_plot(subset_Obs_flow[[name]], subset_HYPE_Data[[name]], "HYPE", name)
+  create_scatter_plot(subset_Obs_flow[[name]], subset_RAVEN_Data[[name]], "RAVEN", name)
+  
+  # Add a main title
+  main_title <- paste("Comparison of Models for Gauge", name, "for the time period of", start_date, "to", end_date)
+  mtext(main_title, side = 3, line = 3, cex = 0.9, adj = 1.1)
+  
+  # Close the PNG device to save the file
+  dev.off()
+}
 
-# Set up a 1x2 grid for plots
-par(mfrow = c(1, 2))
-
-# Create the scatter plot with equal axis limits
-plot(subset_Obs_flow[[name]], subset_PRMS_Data[[name]], 
-     main = paste("Scatterplot for PRMS"),  
-     xlab = "Observed", 
-     ylab = "PRMS", 
-     pch = 19,
-     xlim = range_values, 
-     ylim = range_values)
-
-# Add a red, dashed line
-abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2)
-
-plot(subset_Obs_flow[[name]], subset_HYPE_Data[[name]],
-     main = "Scatterplot for HYPE", 
-     xlab = "Observed", 
-     ylab = "HYPE", 
-     pch = 19,
-     xlim = range_values, 
-     ylim = range_values)
-abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2) # Red, dashed line
-
-main_title <- paste("Comparison of Models for Gauge", name, "for the time period of", start_date, "to", end_date)
-mtext(main_title, side = 3, line = 3, cex = 0.9, adj = 1.1)

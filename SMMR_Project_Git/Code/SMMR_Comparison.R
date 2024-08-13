@@ -6,6 +6,7 @@ library(xts)
 library(htmlwidgets)
 library(lubridate)
 library(hydroGOF)
+library(purr)
 
 #function to add plugin to allow for timeseries to be toggled 
 dyHide <-function(dygraph) {
@@ -33,45 +34,6 @@ replace_subbasin_with_gauge <- function(column_names, raven_names) {
   })
   
   return(updated_names)
-}
-
-## DYNAMIC PLOT SHOWING THE HYDROGRAPH 
-# Define a function to create and save a dygraph plot
-create_dygraph <- function(gauge_name) {
-  # Create initial data frame with dates
-  df_HYPE_PRMS_Obs_RAVEN <- data.frame(Date = Obs_flow$Date)
-  
-  # Merge the data frames for each model and observed data
-  df_HYPE_PRMS_Obs_RAVEN <- merge(df_HYPE_PRMS_Obs_RAVEN, HYPE_Data_All[, c("Date", gauge_name)], by = "Date", all.x = TRUE)
-  df_HYPE_PRMS_Obs_RAVEN <- merge(df_HYPE_PRMS_Obs_RAVEN, PRMS_Data_All[, c("Date", gauge_name)], by = "Date", all.x = TRUE)
-  df_HYPE_PRMS_Obs_RAVEN <- merge(df_HYPE_PRMS_Obs_RAVEN, Obs_flow[, c("Date", gauge_name)], by = "Date", all.x = TRUE)
-  df_HYPE_PRMS_Obs_RAVEN <- merge(df_HYPE_PRMS_Obs_RAVEN, RAVEN_Data_All[, c("Date", gauge_name)], by = "Date", all.x = TRUE)
-  
-  # Rename columns appropriately
-  colnames(df_HYPE_PRMS_Obs_RAVEN)[2:5] <- c("HYPE", "PRMS", "Obs", "RAVEN")
-  
-  # Convert the data frame to an xts object
-  xts_HYPE_PRMS_Obs_RAVEN <- xts(
-    x = df_HYPE_PRMS_Obs_RAVEN[, c("HYPE", "PRMS", "Obs", "RAVEN")],
-    order.by = df_HYPE_PRMS_Obs_RAVEN$Date
-  )
-  
-  # Create the dygraph
-  dygraph_HYPE_PRMS_Obs_RAVEN <- dygraph(xts_HYPE_PRMS_Obs_RAVEN, main = sprintf("Hydrograph for %s", gauge_name)) %>%
-    dySeries("HYPE", label = "HYPE") %>%
-    dySeries("PRMS", label = "PRMS") %>%
-    dySeries("RAVEN", label = "RAVEN") %>%
-    dySeries("Obs", label = "Obs") %>%
-    dyAxis("y", label = "Flows (cms)", valueRange = c(0, 450)) %>%
-    dyAxis("x", label = "Year") %>%
-    dyOptions(colors = c("blue", "gray", "red", "black")) %>%
-    dyHide() %>%
-    dyRangeSelector() %>%
-    dyCSS("Files/SMMR Comnparison Code/legend.css")
-  
-  # Save the dygraph as an HTML file
-  file_save <- sprintf("Results/dygraph/%s.html", gauge_name)
-  saveWidget(dygraph_HYPE_PRMS_Obs_RAVEN, file = file_save, selfcontained = TRUE)
 }
 
 #Setting variable names
@@ -151,7 +113,7 @@ Obs_flow[Obs_flow_colnames] <- Obs_flow[Obs_flow_colnames] * 0.0283168
 #RAVEN DATA IMPORT 
 RAVEN_Data_stmary <- read.csv("Input/raven_simulated_stmary.csv", header = TRUE)
 RAVEN_Data_milk <- read.csv("Input/raven_simulated_milk.csv", header = TRUE)
-raven_names <- read.csv("Input/raven_names", header = TRUE)
+raven_names <- read.csv("Input/raven_names.csv", header = TRUE)
 
 names(RAVEN_Data_stmary) <- replace_subbasin_with_gauge(names(RAVEN_Data_stmary), raven_names)
 stmary_gauge_id <- raven_names$gauge_id[1:3]
@@ -179,10 +141,51 @@ RAVEN_Data_All <- RAVEN_Data_All %>%
   mutate(Date = as.POSIXct(paste(Date, "00:00:00"), format = "%Y-%m-%d %H:%M:%S"))
 
 
+## DYNAMIC PLOT SHOWING THE HYDROGRAPH 
+# Define a function to create and save a dygraph plot
+create_dygraph <- function(gauge_name) {
+  # Create initial data frame with dates
+  df_HYPE_PRMS_Obs_RAVEN <- data.frame(Date = Obs_flow$Date)
+  
+  # Merge the data frames for each model and observed data
+  df_HYPE_PRMS_Obs_RAVEN <- merge(df_HYPE_PRMS_Obs_RAVEN, HYPE_Data_All[, c("Date", gauge_name)], by = "Date", all.x = TRUE)
+  df_HYPE_PRMS_Obs_RAVEN <- merge(df_HYPE_PRMS_Obs_RAVEN, PRMS_Data_All[, c("Date", gauge_name)], by = "Date", all.x = TRUE)
+  df_HYPE_PRMS_Obs_RAVEN <- merge(df_HYPE_PRMS_Obs_RAVEN, Obs_flow[, c("Date", gauge_name)], by = "Date", all.x = TRUE)
+  df_HYPE_PRMS_Obs_RAVEN <- merge(df_HYPE_PRMS_Obs_RAVEN, RAVEN_Data_All[, c("Date", gauge_name)], by = "Date", all.x = TRUE)
+  
+  # Rename columns appropriately
+  colnames(df_HYPE_PRMS_Obs_RAVEN)[2:5] <- c("HYPE", "PRMS", "Obs", "RAVEN")
+  
+  # Convert the data frame to an xts object
+  xts_HYPE_PRMS_Obs_RAVEN <- xts(
+    x = df_HYPE_PRMS_Obs_RAVEN[, c("HYPE", "PRMS", "Obs", "RAVEN")],
+    order.by = df_HYPE_PRMS_Obs_RAVEN$Date
+  )
+  
+  # Create the dygraph
+  dygraph_HYPE_PRMS_Obs_RAVEN <- dygraph(xts_HYPE_PRMS_Obs_RAVEN, main = sprintf("Hydrograph for %s", gauge_name)) %>%
+    dySeries("HYPE", label = "HYPE") %>%
+    dySeries("PRMS", label = "PRMS") %>%
+    dySeries("RAVEN", label = "RAVEN") %>%
+    dySeries("Obs", label = "Obs") %>%
+    dyAxis("y", label = "Flows (cms)", valueRange = c(0, 450)) %>%
+    dyAxis("x", label = "Year") %>%
+    dyOptions(colors = c("blue", "gray", "red", "black")) %>%
+    dyHide() %>%
+    dyRangeSelector() %>%
+    dyCSS("Code/legend.css")
+  
+  # Save the dygraph as an HTML file
+  file_save <- sprintf("Results/dygraph/%s.html", gauge_name)
+  saveWidget(dygraph_HYPE_PRMS_Obs_RAVEN, file = file_save, selfcontained = TRUE)
+}
+
 # Loop through all gauge names and create dygraphs
 for (gauge_name in name_all) {
   create_dygraph(gauge_name)
 }
+
+
 
 for (name in name_all){
   
@@ -226,13 +229,7 @@ for (name in name_all){
       RAVEN = mean(RAVEN, na.rm = TRUE)
     )
 }
-#seasonal 
-#weekly timestep during irrifation starting April 1 and ending October 31 or into november for a weekly timestep 
-# Filter data for irrigation season (April 1 to October 31)
-timeseries_irrigation <- timeseries_day %>%
-  filter 
-  filter(
-    (month(Date) >= 4 & month(Date) <= 11))
+
 
 
 
