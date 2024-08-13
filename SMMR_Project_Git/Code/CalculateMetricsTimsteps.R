@@ -1,4 +1,4 @@
-years <- seq(1891,2015)
+years <- seq(1981,2015)
 
 #created a function to process all data 
 #RAVEN, PRMS, and HYPE data is stored as a .csv file in the folder "raw data". Whenever an update to the 

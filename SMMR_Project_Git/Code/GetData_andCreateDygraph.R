@@ -6,7 +6,7 @@ library(xts)
 library(htmlwidgets)
 library(lubridate)
 library(hydroGOF)
-library(purr)
+library(purrr)
 
 #function to add plugin to allow for timeseries to be toggled 
 dyHide <-function(dygraph) {
@@ -141,6 +141,8 @@ RAVEN_Data_All <- RAVEN_Data_All %>%
   mutate(Date = as.POSIXct(paste(Date, "00:00:00"), format = "%Y-%m-%d %H:%M:%S"))
 
 
+
+
 ## DYNAMIC PLOT SHOWING THE HYDROGRAPH 
 # Define a function to create and save a dygraph plot
 create_dygraph <- function(gauge_name) {
@@ -184,52 +186,5 @@ create_dygraph <- function(gauge_name) {
 for (gauge_name in name_all) {
   create_dygraph(gauge_name)
 }
-
-
-
-for (name in name_all){
-  
-  #split the timseries 
-  # Create initial data frame with dates
-  timeseries_day <- data.frame(Date = RAVEN_Data_All$Date)
-  # Merge the data frames for each model and observed data
-  timeseries_day <- merge(timeseries_day, HYPE_Data_All[, c("Date", gauge_name)], by = "Date", all.x = TRUE)
-  timeseries_day <- merge(timeseries_day, PRMS_Data_All[, c("Date", gauge_name)], by = "Date", all.x = TRUE)
-  timeseries_day <- merge(timeseries_day, RAVEN_Data_All[, c("Date", gauge_name)], by = "Date", all.x = TRUE)
-  timeseries_day <- merge(timeseries_day, Obs_flow[, c("Date", gauge_name)], by = "Date", all.x = TRUE)
-  
-  # Rename columns appropriately
-  colnames(timeseries_day)[2:5] <- c("HYPE", "PRMS", "RAVEN", "Obs")
-  timeseries_day$Date <- as.Date(timeseries_day$Date)
-  timeseries_day <- timeseries_day %>% mutate(day_of_week = wday(Date, label = TRUE))
-  
-  # Create a new 'week' column
-  timeseries_day <- timeseries_day %>%
-    mutate(week = floor_date(Date - days(3), unit = "week") + days(3))
-  # Calculate the mean of HYPE for each week
-  timeseries_weekly <- timeseries_day %>%
-    group_by(week) %>%
-    summarize(
-      week_start = min(Date),
-      week_end = max(Date),
-      HYPE = mean(HYPE, na.rm = TRUE),
-      PRMS = mean(PRMS, na.rm = TRUE),
-      Obs = mean(Obs, na.rm = TRUE),
-      RAVEN = mean(RAVEN, na.rm = TRUE)
-    )
-  timeseries_weekly <- timeseries_weekly[,-1]
-  
-  # Monthly aggregation
-  timeseries_monthly <- timeseries_day %>%
-    group_by(month = floor_date(Date, "month")) %>%
-    summarize(
-      HYPE = mean(HYPE, na.rm = TRUE),
-      PRMS = mean(PRMS, na.rm = TRUE),
-      Obs = mean(Obs, na.rm = TRUE),
-      RAVEN = mean(RAVEN, na.rm = TRUE)
-    )
-}
-
-
 
 
